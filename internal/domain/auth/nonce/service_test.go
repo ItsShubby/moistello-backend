@@ -20,7 +20,11 @@ import (
 
 func TestNonceReplayAttackMatrix(t *testing.T) {
 	redisClient, mr := setupRedis(t)
-	defer redisClient.Close()
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			t.Logf("failed to close redis client: %v", err)
+		}
+	}()
 
 	svc := NewService(redisClient, 5*time.Minute)
 	ctx := context.Background()
@@ -203,7 +207,11 @@ func TestNonceReplayAttackMatrix(t *testing.T) {
 
 func TestNonceBasicFlow(t *testing.T) {
 	redisClient, mr := setupRedis(t)
-	defer redisClient.Close()
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			t.Logf("failed to close redis client: %v", err)
+		}
+	}()
 
 	svc := NewService(redisClient, 5*time.Minute)
 	ctx := context.Background()

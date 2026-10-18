@@ -34,7 +34,11 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to open database connection")
 	}
-	defer db.Close()
+	defer func() {
+		if cerr := db.Close(); cerr != nil {
+			log.Warn().Err(cerr).Msg("failed to close database connection")
+		}
+	}()
 
 	if err := Run(db, opts); err != nil {
 		log.Fatal().Err(err).Msgf("migration %s failed", opts.Direction)

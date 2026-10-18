@@ -22,14 +22,14 @@ This command is read-only by default. Use --fix to apply repairs.
 Example:
   moistello-indexer repair
   moistello-indexer repair --fix`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		fix, _ := cmd.Flags().GetBool("fix")
 
 		db, err := openDB()
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer closeInto(db, "database", &err)
 
 		ctx := context.Background()
 

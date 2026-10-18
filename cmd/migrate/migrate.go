@@ -147,7 +147,11 @@ func loadAppliedVersions(ctx context.Context, conn *sql.Conn) (map[string]bool, 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if cerr := rows.Close(); cerr != nil {
+			log.Warn().Err(cerr).Msg("failed to close schema_migrations rows")
+		}
+	}()
 
 	applied := make(map[string]bool)
 	for rows.Next() {
@@ -440,7 +444,11 @@ func Run(db *sql.DB, opts Options) error {
 	if err != nil {
 		return fmt.Errorf("acquiring dedicated migration connection: %w", err)
 	}
-	defer conn.Close()
+	defer func() {
+		if cerr := conn.Close(); cerr != nil {
+			log.Warn().Err(cerr).Msg("failed to close dedicated migration connection")
+		}
+	}()
 
 	if err := ensureMigrationsTable(ctx, conn); err != nil {
 		return fmt.Errorf("ensuring migrations table: %w", err)

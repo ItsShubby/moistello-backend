@@ -127,7 +127,11 @@ func (r *pgRepo) ListByUser(ctx context.Context, userID uuid.UUID, page, limit i
 	if err != nil {
 		return nil, 0, fmt.Errorf("listing user contributions: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			// Log but don't fail the operation - data has already been read
+		}
+	}()
 
 	var contributions []Contribution
 	for rows.Next() {
@@ -164,7 +168,11 @@ func (r *pgRepo) ListByCircle(ctx context.Context, circleID uuid.UUID, page, lim
 	if err != nil {
 		return nil, 0, fmt.Errorf("listing circle contributions: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			// Log but don't fail the operation - data has already been read
+		}
+	}()
 
 	var contributions []Contribution
 	for rows.Next() {

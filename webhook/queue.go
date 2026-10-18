@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/moistello/backend/pkg/rabbitmq"
+	"github.com/rs/zerolog/log"
 )
 
 // WebhookRoutingKey is the routing key queued webhook messages are published
@@ -54,11 +55,15 @@ func (m Message) Deliver(ctx context.Context, httpClient *http.Client) error {
 
 		resp, err := httpClient.Do(req)
 		if err == nil && resp.StatusCode >= 200 && resp.StatusCode < 300 {
-			resp.Body.Close()
+			if cerr := resp.Body.Close(); cerr != nil {
+				log.Warn().Err(cerr).Str("targetUrl", m.TargetURL).Msg("failed to close response body")
+			}
 			return nil
 		}
 		if resp != nil {
-			resp.Body.Close()
+			if cerr := resp.Body.Close(); cerr != nil {
+				log.Warn().Err(cerr).Str("targetUrl", m.TargetURL).Msg("failed to close response body")
+			}
 		}
 
 		if attempt < m.MaxRetries {

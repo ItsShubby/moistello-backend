@@ -41,13 +41,13 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to connect to database")
 	}
-	defer db.Close()
+	defer logClose(db, "database")
 
 	redisClient, err := redis.New(cfg.Redis)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to connect to redis")
 	}
-	defer redisClient.Close()
+	defer logClose(redisClient, "redis")
 
 	rmqClient, err := rabbitmq.New(cfg.RabbitMQ)
 	if err != nil {

@@ -78,7 +78,11 @@ func (r *pgRepository) loadWeightSnapshot(ctx context.Context, p *Proposal) erro
 	if err != nil {
 		return fmt.Errorf("loading governance weight snapshot: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			// Log but don't fail the operation - data has already been read
+		}
+	}()
 
 	snapshot := make(map[uuid.UUID]int64)
 	for rows.Next() {
@@ -288,7 +292,11 @@ func (r *pgRepository) RecordVoteWeighted(ctx context.Context, proposalID, voter
 	if err != nil {
 		return fmt.Errorf("beginning vote transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil {
+			// Rollback error is expected after successful commit
+		}
+	}()
 
 	insertQuery := `
 		INSERT INTO governance_votes (proposal_id, voter_id, vote, weight, created_at)

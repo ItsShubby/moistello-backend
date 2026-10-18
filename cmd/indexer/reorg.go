@@ -25,7 +25,7 @@ This command:
 Example:
   moistello-indexer reorg 12345678`,
 	Args: cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		targetLedger, err := strconv.ParseInt(args[0], 10, 64)
 		if err != nil {
 			return fmt.Errorf("invalid ledger number: %w", err)
@@ -35,7 +35,7 @@ Example:
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer closeInto(db, "database", &err)
 
 		ctx := context.Background()
 

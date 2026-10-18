@@ -37,7 +37,11 @@ func get(t *testing.T, client *http.Client, url string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Logf("failed to close response body: %v", err)
+		}
+	}()
 	_, _ = io.Copy(io.Discard, resp.Body)
 	return resp.StatusCode, nil
 }
@@ -161,7 +165,11 @@ func TestServer_ForcedKillAfterConfiguredTimeout(t *testing.T) {
 func TestServer_StartFailsWhenPortBusy(t *testing.T) {
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
-	defer ln.Close()
+	defer func() {
+		if err := ln.Close(); err != nil {
+			t.Logf("failed to close listener: %v", err)
+		}
+	}()
 
 	cfg := testConfig()
 	cfg.Port = ln.Addr().(*net.TCPAddr).Port
