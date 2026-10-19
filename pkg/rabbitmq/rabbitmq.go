@@ -2,7 +2,9 @@ package rabbitmq
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 
 	amqp091 "github.com/rabbitmq/amqp091-go"
 	"github.com/rs/zerolog/log"
@@ -43,20 +45,35 @@ func (c *Client) IsAlive() bool {
 	return c.conn != nil && !c.conn.IsClosed()
 }
 
-
+// Close closes the channel and then the connection. Both are always
+// attempted; any failures are joined into the returned error so callers can
+// see every cleanup problem rather than only the first.
 func (c *Client) Close() error {
-	var closeErr error
+	var closers []namedCloser
 	if c.ch != nil {
-		if err := c.ch.Close(); err != nil {
-			closeErr = fmt.Errorf("closing channel: %w", err)
-		}
+		closers = append(closers, namedCloser{"channel", c.ch})
 	}
 	if c.conn != nil {
-		if err := c.conn.Close(); err != nil && closeErr == nil {
-			closeErr = fmt.Errorf("closing connection: %w", err)
+		closers = append(closers, namedCloser{"connection", c.conn})
+	}
+	return closeAll(closers...)
+}
+
+type namedCloser struct {
+	name string
+	c    io.Closer
+}
+
+// closeAll closes every closer in order, continuing past failures, and
+// returns the joined errors (nil if all succeeded).
+func closeAll(closers ...namedCloser) error {
+	var errs []error
+	for _, nc := range closers {
+		if err := nc.c.Close(); err != nil {
+			errs = append(errs, fmt.Errorf("closing rabbitmq %s: %w", nc.name, err))
 		}
 	}
-	return closeErr
+	return errors.Join(errs...)
 }
 
 func (c *Client) Publish(exchange, routingKey string, body []byte) error {

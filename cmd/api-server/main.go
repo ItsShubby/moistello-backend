@@ -624,7 +624,9 @@ func main() {
 		CloseLast: []func(){
 			func() {
 				if rmqClient != nil {
-					rmqClient.Close()
+					if err := rmqClient.Close(); err != nil {
+						log.Warn().Err(err).Msg("closing rabbitmq")
+					}
 				}
 			},
 			func() {
