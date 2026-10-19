@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"time"
 
@@ -190,6 +191,9 @@ func (r *governanceWeightResolver) VotingWeight(ctx context.Context, userID stri
 	balance, err := r.tokens.GetBalance(ctx, u.WalletAddress)
 	if err != nil {
 		return 0, err
+	}
+	if balance > math.MaxInt64 {
+		return 0, fmt.Errorf("governance token balance %d exceeds supported voting weight", balance)
 	}
 	return governance.ApplyTierFactor(int64(balance), tier), nil
 }

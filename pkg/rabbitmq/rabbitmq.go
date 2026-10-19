@@ -43,13 +43,20 @@ func (c *Client) IsAlive() bool {
 	return c.conn != nil && !c.conn.IsClosed()
 }
 
-func (c *Client) Close() {
+
+func (c *Client) Close() error {
+	var closeErr error
 	if c.ch != nil {
-		c.ch.Close()
+		if err := c.ch.Close(); err != nil {
+			closeErr = fmt.Errorf("closing channel: %w", err)
+		}
 	}
 	if c.conn != nil {
-		c.conn.Close()
+		if err := c.conn.Close(); err != nil && closeErr == nil {
+			closeErr = fmt.Errorf("closing connection: %w", err)
+		}
 	}
+	return closeErr
 }
 
 func (c *Client) Publish(exchange, routingKey string, body []byte) error {
@@ -96,10 +103,14 @@ func (c *Client) Consume(ctx context.Context, queue string, handler Handler) err
 			}
 			if err := handler(ctx, msg.Body); err != nil {
 				log.Warn().Err(err).Str("queue", queue).Msg("message handler failed; nacking")
-				_ = msg.Nack(false, false)
+				if nackErr := msg.Nack(false, false); nackErr != nil {
+					log.Error().Err(nackErr).Str("queue", queue).Msg("failed to nack message")
+				}
 				continue
 			}
-			_ = msg.Ack(false)
+			if ackErr := msg.Ack(false); ackErr != nil {
+				log.Error().Err(ackErr).Str("queue", queue).Msg("failed to ack message")
+			}
 		}
 	}
 }
