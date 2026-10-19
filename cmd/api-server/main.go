@@ -233,7 +233,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "❌ Configuration offline validation failed:\n%v\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("✅ Configuration is valid (environment=%s, offline preflight passed)\n", cfg.Environment)
+		fmt.Fprintf(os.Stdout, "✅ Configuration is valid (environment=%s, offline preflight passed)\n", cfg.Environment)
 		os.Exit(0)
 	}
 
