@@ -616,7 +616,7 @@ func loadDotEnv() {
 	}
 }
 
-func loadEnvFile(path string) error {
+func loadEnvFile(path string) (err error) {
 	f, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -624,7 +624,11 @@ func loadEnvFile(path string) error {
 		}
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		if closeErr := f.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("closing %s: %w", path, closeErr)
+		}
+	}()
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
