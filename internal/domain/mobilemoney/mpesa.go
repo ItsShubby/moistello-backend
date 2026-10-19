@@ -85,7 +85,9 @@ func (p *MPesaProvider) accessToken(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("requesting oauth token: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+}()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -136,7 +138,9 @@ func (p *MPesaProvider) doRequest(ctx context.Context, path string, body, result
 	if err != nil {
 		return fmt.Errorf("executing request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+}()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
